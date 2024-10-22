@@ -1,41 +1,39 @@
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
+import 'package:test01/app/data/api/auth_api.dart';
+import 'package:test01/app/data/local_storage.dart';
 import 'package:test01/app/routes/app_pages.dart';
 
 class AuthController extends GetxController {
   var isLoggedIn = false.obs;
   var token = ''.obs;
+  final AuthApi _authApi = AuthApi();
 
-  // Métodos relacionados con autenticación
+  @override
+  void onInit() {
+    super.onInit();
+    LocalStorage.init();
+  }
+
   Future<void> login(String username, String password) async {
-    // final url = Uri.parse('https://example.com/api/auth/login');
-    // final response = await http.post(
-    //   url,
-    //   headers: {'Content-Type': 'application/json'},
-    //   body: json.encode({'username': username, 'password': password}),
-    // );
-    //
-    // if (response.statusCode == 200) {
-    //   final responseData = json.decode(response.body);
-    //   token.value = responseData['token'];
-    //   isLoggedIn.value = true;
-    //   Get.toNamed(Routes.CONTACT);
-    // } else {
-    //   // Manejar error de autenticación
-    //   isLoggedIn.value = false;
-    // }
-    if(username == 'admin' && password == 'admin') {
-      token.value = 'token';
-      isLoggedIn.value = true;
-      Get.toNamed(Routes.CONTACT);
+    try {
+      await LocalStorage.init(); // Ensure LocalStorage is initialized
+      final token = await _authApi.login(username, password);
+      if (token != null) {
+        this.token.value = token;
+        isLoggedIn.value = true;
+        await LocalStorage.setToken(token);
+        Get.toNamed(Routes.CONTACT);
+      } else {
+        isLoggedIn.value = false;
+      }
+    } catch (e) {
+      isLoggedIn.value = false;
     }
   }
 
   void logout() {
-    // Lógica de cierre de sesión
     token.value = '';
     isLoggedIn.value = false;
+    LocalStorage.clearToken();
   }
 }
